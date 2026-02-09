@@ -1,0 +1,653 @@
+
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title> KAWAII Cafe♡｜グッズ購入メモ</title>
+
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+  background-color: #fff;
+}
+
+body { padding-bottom: 0; }
+
+.main { padding: 12px; }
+
+.main-title {
+  text-align: center;
+  padding: 18px 10px;
+  background: #f8f8f8;
+}
+.main-title .anniv {
+  display: block;
+  font-size: 14px;
+}
+
+.main-title .title-main {
+  display: block;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.note {
+  display: block;
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+}
+
+h2 {
+  margin-top: 24px;
+  font-size: 18px;
+  border-left: 4px solid #84c1b1;
+  padding-left: 8px;
+}
+
+/* 共通 */
+.item {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+
+  padding: 12px 0;
+  margin: 0;
+  border-bottom: 1px solid #eee;
+}
+
+.item:last-of-type {
+  border-bottom: none;
+}
+
+
+
+/* キャラ商品（1行固定） */
+.label-char {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ランダム商品（2行OK） */
+.label-random {
+  flex: 1;
+  white-space: normal;
+  line-height: 1.4;
+  word-break: keep-all;  
+}
+
+
+
+.price {
+  font-size: 12px;
+  color: #666;
+  margin-left: 6px;
+}
+
+input {
+  width: 40px;
+  text-align: center;
+  font-size: 16px;
+}
+
+.qty-btn {
+  width: 36px;
+  height: 36px;
+}
+
+.summary-fixed {
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+
+  background: #fff;
+  border-bottom: 2px solid #84c1b1;
+
+  padding: 10px 16px;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  z-index: 10;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+
+.save-btn {
+  background: #84c1b1;
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+}
+
+/* 作成者情報のスタイル */
+.creator {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+
+  font-size: 11px;
+  color: #666;
+  margin-top: 16px;
+  margin-bottom: 32px;
+  padding: 8px;
+}
+
+.creator > a { justify-self: center; }
+.creator > div { justify-self: end; }
+
+
+.creator-link {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+  gap: 4px;
+}
+
+.creator-link svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+.reset-btn{
+  background:#e57373;
+  color:#fff;
+  border:none;
+  padding:8px 14px;
+  cursor:pointer;
+}
+
+.reset-btn:hover{
+  background:#d32f2f;
+}
+
+
+</style>
+</head>
+
+<body>
+<!-- ☆画像を保存するときの名前変更 -->
+<h1 class="main-title">
+  <span class="anniv"> Aporia × Sanrio characters in coly cafe! </span>
+  <span class="title-main">KAWAII Cafe♡</span>
+</h1>
+
+<!-- ★ここは合計バーだけ -->
+<div class="summary-fixed">
+  <div>
+    合計：<span id="totalQty">0</span>点 /
+    ¥<span id="totalPrice">0</span>
+  </div>
+
+  <div style="display:flex; gap:8px;">
+    <button class="save-btn" onclick="saveAsImage()">画像で保存</button>
+    <button class="reset-btn" onclick="resetAll()">リセット</button>
+  </div>
+</div>
+
+<!-- ☆商品名 -->
+<div class="main">
+
+  <h2>■1月20日　前半発売</h2>
+
+  <h3>○アクスタ</h3>
+  <div id="A1"></div>
+  
+    <h3>○カード型アクスタ</h3>
+  <div id="A2"></div>
+
+    <h3>○アクリルクリップ</h3>
+  <div id="A3"></div>
+  
+ <h3>○その他オープン商品</h3>
+ <div id="open_first"></div>
+
+  <h3>○ランダム商品</h3>
+  <div id="random_first"></div>
+
+  <h2>■2月10日　後半発売</h2>
+
+  <h3>○アクキー</h3>
+  <div id="B1"></div>
+  
+
+  <h3>○ランダム商品</h3>
+  <div id="random_second"></div>
+</div>
+
+<script>
+/* ===============================
+   ☆キャラ名・キャラ別オープン・ランダム品名と値段
+   =============================== */
+
+const PRICE = {
+  A1: 1989,
+  A2: 1650,
+  A3: 770,
+  B1: 1320,
+};
+
+const CHARACTERS_NORMAL = [
+  "皇坂","宇京","隠岐谷","相沢","祠堂","恩田"
+];
+
+const CHARACTERS_SPECIAL = [
+  "皇坂","城瀬","須王","綾戸","宇京","樋宮","環野","槻本","壱川","隠岐谷","節見","御門","新開","相沢","在間","祠堂","立科","恩田","新名","神家","麻波"   // ←違うラインナップ
+];
+
+const RANDOM_PRICE_FIRST = {
+  "等身クリカ": 550,
+  "等身クリア色紙": 550,
+  "SDアクスタ/Aporia": 880,
+  "SDアクスタ/Sanrio": 1320,
+  "SDダイカットカード": 880,
+  "アクリルチャーム/Sanrio": 440
+};
+
+const RANDOM_PRICE_SECOND = {
+"ステッカー":440,
+"シーンフィルム":330
+};
+
+const OPEN_FIRST = {
+  "クリアタンブラー": { price: 1980 },  // ← 全１種が増えたらここ
+};
+
+
+/* ===============================
+   ロジック（触らなくてOK）
+   =============================== */
+
+function createGroup(targetId, prefix, price, characters) {
+  const area = document.getElementById(targetId);
+
+  characters.forEach(c => {
+    area.innerHTML += `
+      <div class="item">
+        <label class="label-char">
+          ${c} <span class="price">¥${price.toLocaleString()}</span>
+        </label>
+
+        <button class="qty-btn" onclick="changeQty('${prefix}_${c}',-1,10)">−</button>
+        <input id="${prefix}_${c}" type="number" value="0" min="0" oninput="calc()">
+        <button class="qty-btn" onclick="changeQty('${prefix}_${c}',1,10)">＋</button>
+      </div>`;
+  });
+}
+
+
+function saveData() {
+  const data = {};
+  document.querySelectorAll("input").forEach(el => {
+    data[el.id] = el.value;
+  });
+  localStorage.setItem("purchaseMemo", JSON.stringify(data));
+}
+
+function loadData() {
+  const data = JSON.parse(localStorage.getItem("purchaseMemo") || "{}");
+  Object.keys(data).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = data[id];
+  });
+}
+
+
+
+function createRandom(targetId, prefix, priceObj) {
+  const area = document.getElementById(targetId);
+
+  Object.keys(priceObj).forEach(r => {
+    area.innerHTML += `
+      <div class="item">
+        <label class="label-random">
+          ${r} <span class="price">¥${priceObj[r].toLocaleString()}</span>
+        </label>
+
+        <button class="qty-btn" onclick="changeQty('${prefix}_${r}',-1,90)">−</button>
+        <input id="${prefix}_${r}" 
+               type="number" 
+               value="0" 
+               min="0"
+               oninput="calc()">
+        <button class="qty-btn" onclick="changeQty('${prefix}_${r}',1,90)">＋</button>
+      </div>`;
+  });
+}
+
+function createOpen(targetId, prefix, obj) {
+  const area = document.getElementById(targetId);
+
+  Object.entries(obj).forEach(([name, data], i) => {
+    area.innerHTML += `
+      <div class="item">
+        <label class="label-char">
+          ${name} <span class="price">¥${data.price.toLocaleString()}</span>
+        </label>
+
+        <button class="qty-btn" onclick="changeQty('${prefix}${i}',-1,30)">−</button>
+        <input id="${prefix}${i}" type="number" value="0" readonly>
+        <button class="qty-btn" onclick="changeQty('${prefix}${i}',1,30)">＋</button>
+      </div>`;
+  });
+}
+
+
+
+function changeQty(id, diff, max) {
+  const el = document.getElementById(id);
+  el.value = Math.max(0, Math.min(Number(el.value) + diff, max));
+  calc();
+}
+
+function calc() {
+  let qty = 0, price = 0;
+
+  document.querySelectorAll("input").forEach(el => {
+    const v = Math.max(0, Number(el.value) || 0);
+    if (!v) return;
+
+    qty += v;
+
+    if (el.id.startsWith("ac_"))
+      price += v * PRICE.A1;
+
+    else if (el.id.startsWith("ac2_"))
+      price += v * PRICE.A2;
+
+    else if (el.id.startsWith("SPECIAL_"))
+      price += v * PRICE.A3;
+
+    else if (el.id.startsWith("ps_"))
+      price += v * PRICE.B1;
+      
+else if (el.id.startsWith("OP")) {
+  const index = Number(el.id.replace("OP",""));
+  const item = Object.values(OPEN_FIRST)[index];
+  if (!item) return;
+  price += v * item.price;
+}
+
+
+
+    else if (el.id.startsWith("rd1_"))
+      price += v * RANDOM_PRICE_FIRST[el.id.replace("rd1_","")];
+
+    else if (el.id.startsWith("rd2_"))
+      price += v * RANDOM_PRICE_SECOND[el.id.replace("rd2_","")];
+  });
+
+  totalQty.textContent = qty;
+  totalPrice.textContent = price.toLocaleString();
+  saveData(); 
+}
+
+function resetAll(){
+
+  // 確認ダイアログ
+  if(!confirm("すべての入力数をリセットしますか？")){
+    return;
+  }
+
+  // 入力欄を全部0に
+  document.querySelectorAll("input").forEach(el=>{
+    el.value = 0;
+  });
+
+  // 保存データ削除（←これが本体）
+  localStorage.removeItem("purchaseMemo");
+
+  // 再計算
+  calc();
+}
+
+
+function saveAsImage() {
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+
+  let firstLines = [];
+  let secondLines = [];
+  let firstSubtotal = 0;
+  let secondSubtotal = 0;
+
+  document.querySelectorAll("input").forEach(el => {
+    const q = Number(el.value);
+    if (!q) return;
+
+    const label = el.closest(".item").querySelector("label");
+    const name = label.childNodes[0].textContent.trim();
+
+    let unit = 0;
+
+    if (el.id.startsWith("ac_")) {
+      unit = PRICE.A1;
+      firstSubtotal += unit * q;
+      firstLines.push(`${name} ×${q}　¥${(unit*q).toLocaleString()}`);
+    }
+       else if (el.id.startsWith("ac2_")) {
+      unit = PRICE.A2;
+      firstSubtotal += unit * q;
+      firstLines.push(`${name} ×${q}　¥${(unit*q).toLocaleString()}`);
+    }
+else if (el.id.startsWith("SPECIAL_")) {
+  unit = PRICE.A3;
+      firstSubtotal += unit * q;
+      firstLines.push(`${name} ×${q}　¥${(unit*q).toLocaleString()}`);
+    }
+
+else if (el.id.startsWith("OP")) {
+  const index = Number(el.id.replace("OP",""));
+  const item = Object.values(OPEN_FIRST)[index];
+  if (!item) return;
+
+  unit = item.price;
+  firstSubtotal += unit * q;
+  firstLines.push(`${name} ×${q}　¥${(unit*q).toLocaleString()}`);
+}
+
+    else if (el.id.startsWith("rd1_")) {
+      unit = RANDOM_PRICE_FIRST[el.id.replace("rd1_","")];
+      firstSubtotal += unit * q;
+      firstLines.push(`${name} ×${q}　¥${(unit*q).toLocaleString()}`);
+    }
+    else if (el.id.startsWith("ps_")) {
+      unit = PRICE.B1;
+      secondSubtotal += unit * q;
+      secondLines.push(`${name} ×${q}　¥${(unit*q).toLocaleString()}`);
+    }
+    else if (el.id.startsWith("rd2_")) {
+      unit = RANDOM_PRICE_SECOND[el.id.replace("rd2_","")];
+      secondSubtotal += unit * q;
+      secondLines.push(`${name} ×${q}　¥${(unit*q).toLocaleString()}`);
+    }
+  });
+
+
+
+  const lines = [
+    "Aporia × Sanrio characters in coly cafe!",
+    "KAWAII Cafe♡",
+    "RED_LINE"
+  ];
+
+  if (firstLines.length) {
+    lines.push("■前半商品", ...firstLines, "SUBTOTAL_FIRST");
+  }
+
+  if (secondLines.length) {
+    lines.push("■後半商品", ...secondLines, "SUBTOTAL_SECOND");
+  }
+
+  lines.push("RED_LINE");
+  lines.push(`合計点数：${totalQty.textContent}`);
+  lines.push(`合計金額：¥${totalPrice.textContent}`);
+
+/* ★高さを正確に計算 */
+let height = 50;
+
+lines.forEach((line, i) => {
+  if (i === 0) height += 26;
+  else if (i === 1) height += 24;
+  else if (line === "RED_LINE") height += 24;
+  else if (line === "SUBTOTAL_FIRST" || line === "SUBTOTAL_SECOND") height += 44;
+  else if (!line.startsWith("■")) height += 28;
+  else height += 26;
+});
+
+
+canvas.width = 750;
+canvas.height = height + 40;
+
+
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#000";
+
+  let y = 50;
+
+  lines.forEach((line, i) => {
+
+    if (i === 0) {
+      ctx.font = "16px sans-serif";
+      ctx.fillText(line, 30, y);
+      y += 26;
+      return;
+    }
+
+    if (i === 1) {
+      ctx.font = "bold 22px sans-serif";
+      ctx.fillText(line, 30, y);
+      y += 24;
+      return;
+    }
+
+    if (line === "RED_LINE") {
+      y += 6;
+      ctx.strokeStyle = "#84c1b1";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(30, y);
+      ctx.lineTo(canvas.width - 30, y);
+      ctx.stroke();
+      y += 18;
+      return;
+    }
+
+    if (line === "SUBTOTAL_FIRST" || line === "SUBTOTAL_SECOND") {
+      y += 6;
+      ctx.strokeStyle = "#000";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(30, y);
+      ctx.lineTo(canvas.width - 30, y);
+      ctx.stroke();
+
+      y += 18;
+      ctx.font = "bold 18px sans-serif";
+
+      const subtotal =
+        line === "SUBTOTAL_FIRST" ? firstSubtotal : secondSubtotal;
+
+      const label =
+        line === "SUBTOTAL_FIRST" ? "前半小計" : "後半小計";
+
+      ctx.fillText(`${label}：¥${subtotal.toLocaleString()}`, 30, y);
+      y += 26;
+/* ★ここ追加：次のブロックとの余白 */
+y += 10;
+
+return;
+    }
+
+if (!line.startsWith("■") &&
+    lines[i+1] !== "SUBTOTAL_FIRST" &&
+    lines[i+1] !== "SUBTOTAL_SECOND") {
+
+      ctx.font = "18px sans-serif";
+      ctx.fillText(line, 30, y);
+
+      y += 8;
+      ctx.strokeStyle = "#ddd";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(30, y);
+      ctx.lineTo(canvas.width - 30, y);
+      ctx.stroke();
+
+      y += 20;
+      return;
+    }
+
+    ctx.font = "bold 18px sans-serif";
+    ctx.fillText(line, 30, y);
+    y += 26;
+  });
+
+  const a = document.createElement("a");
+  a.download = "BMC_coly_cafe_memo.png";
+  a.href = canvas.toDataURL("image/png");
+  a.click();
+}
+
+
+
+// 前半
+createGroup("A1","ac",PRICE.A1, CHARACTERS_NORMAL);
+createGroup("A2","ac2",PRICE.A2, CHARACTERS_NORMAL);
+createGroup("A3","SPECIAL",PRICE.A3, CHARACTERS_SPECIAL);
+createRandom("random_first","rd1",RANDOM_PRICE_FIRST);
+
+createOpen("open_first", "OP", OPEN_FIRST);
+
+// 後半
+createGroup("B1","ps",PRICE.B1, CHARACTERS_NORMAL);
+createRandom("random_second","rd2",RANDOM_PRICE_SECOND);
+
+
+loadData();   
+calc();
+
+
+</script>
+
+  <!-- 中略：ランダム商品のdivなどの後 -->
+
+<div class="creator">
+
+  <a 
+    href="https://twitter.com/intent/tweet?url=https://sites.google.com/view/ylocaltrhk/coly-cafe&text=ブレマイのグッズ購入数検討に使えます！" 
+    target="_blank" 
+    rel="noopener" 
+    class="creator-link"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M18.244 2.25h3.308l-7.227 8.26L22.5 21.75h-6.594l-5.16-6.726-5.886 6.726H1.548l7.73-8.835L1.5 2.25h6.762l4.662 6.12 5.32-6.12Zm-1.16 17.52h1.833L7.62 4.125H5.655l11.43 15.645Z"/>
+    </svg>
+    <span>シェア</span>
+  </a>
+
+  <div>
+    作成者：
+    <a href="https://x.com" target="_blank" rel="noopener" class="creator-link">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M18.244 2.25h3.308l-7.227 8.26L22.5 21.75h-6.594l-5.16-6.726-5.886 6.726H1.548l7.73-8.835L1.5 2.25h6.762l4.662 6.12 5.32-6.12Zm-1.16 17.52h1.833L7.62 4.125H5.655l11.43 15.645Z"/>
+      </svg>
+      <span>@yLocal_trhk</span>
+    </a>
+  </div>
+
+</div>
+
+</body>
+</html>
